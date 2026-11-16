@@ -25,10 +25,12 @@ Future<void> main() async {
     MediaKit.ensureInitialized();
   } catch (_) {}
 
-  // Initialise flutter_downloader with SSL resilience for media mirrors
-  try {
-    await FlutterDownloader.initialize(debug: false, ignoreSsl: true).timeout(const Duration(milliseconds: 1200));
-  } catch (_) {}
+  // Initialise flutter_downloader with SSL resilience for media mirrors (Android-only)
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      await FlutterDownloader.initialize(debug: false, ignoreSsl: true).timeout(const Duration(milliseconds: 1200));
+    } catch (_) {}
+  }
 
   // Configure API client (reads saved base URL from SharedPreferences)
   try {

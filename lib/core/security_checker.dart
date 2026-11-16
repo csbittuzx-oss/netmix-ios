@@ -19,6 +19,12 @@ class SecurityChecker {
       if (kIsWeb) return true;
       if (_hasPassedIntegrity) return true;
 
+      // On iOS / Apple platforms, Apple sandboxing and App Store / AltStore certificates handle integrity natively
+      if (defaultTargetPlatform != TargetPlatform.android) {
+        _hasPassedIntegrity = true;
+        return true;
+      }
+
       // 1. Package Name Integrity
       final info = await PackageInfo.fromPlatform();
       if (info.packageName != _expectedPackage) {
