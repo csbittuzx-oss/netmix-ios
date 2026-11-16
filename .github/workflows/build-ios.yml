@@ -1,0 +1,80 @@
+name: Build Netmix iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+  push:
+    branches:
+      - master
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-ios:
+    name: Build iOS IPA (${{ github.event.inputs.build_type || 'release' }})
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter & CocoaPods
+        run: |
+          flutter --version
+          pod --version
+
+      - name: Install Flutter Dependencies
+        run: |
+          if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
+          flutter pub get
+
+      - name: Install CocoaPods
+        run: |
+          if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      - name: Build iOS Application (Unsigned)
+        run: |
+          if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
+          if [ "${{ github.event.inputs.build_type }}" = "debug" ]; then
+            flutter build ios --debug --no-codesign
+            APP_DIR="build/ios/iphoneos/Runner.app"
+          else
+            flutter build ios --release --no-codesign
+            APP_DIR="build/ios/iphoneos/Runner.app"
+          fi
+          
+          echo "Packaging Runner.app into Netmix.ipa..."
+          mkdir -p build/ios/ipa_payload/Payload
+          cp -R "$APP_DIR" build/ios/ipa_payload/Payload/
+          cd build/ios/ipa_payload
+          zip -yr ../Netmix.ipa Payload
+          cd ..
+          rm -rf ipa_payload
+          ls -la Netmix.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Netmix-iOS-${{ github.event.inputs.build_type || 'release' }}
+          path: '**/build/ios/Netmix.ipa'
+          retention-days: 14
