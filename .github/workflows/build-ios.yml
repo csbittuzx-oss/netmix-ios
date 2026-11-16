@@ -45,13 +45,6 @@ jobs:
           if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
           flutter pub get
 
-      - name: Install CocoaPods
-        run: |
-          if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
-          cd ios
-          pod install --repo-update
-          cd ..
-
       - name: Build iOS Application (Unsigned)
         run: |
           if [ -d "netmix_flutter" ]; then cd netmix_flutter; fi
